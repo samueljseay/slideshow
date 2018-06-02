@@ -46,18 +46,6 @@ export default class Slideshow extends Component {
     }, this.props.slideDuration);
   }
 
-  fadeOutTransition() {}
-
-  photoTooHigh(height) {
-    const { offsetHeight } = document.body;
-    return height > offsetHeight;
-  }
-
-  photoTooWide(width) {
-    const { offsetWidth } = document.body;
-    return width > offsetWidth;
-  }
-
   render() {
     const { index, loading, images } = this.state;
 
@@ -66,11 +54,8 @@ export default class Slideshow extends Component {
 
     let constrainDimension = { height: offsetHeight - 100 };
 
-    // if we have a very wide ratio fix to the width constraint
-    if (width / 4 > height) {
-      const constrainedWidth =
-        width > offsetWidth - 100 ? offsetWidth - 100 : width;
-      constrainDimension = { width: constrainedWidth, height };
+    if (width > offsetWidth) {
+      constrainDimension = { width: offsetWidth - 100 };
     }
 
     if (loading) {

@@ -74,19 +74,18 @@ class App extends Component {
       config
     );
 
-    this.setState({ media: data.mediaItems });
+    this.setState({
+      media: data.mediaItems.map(item => {
+        return `${item.baseUrl}=w${item.mediaMetadata.width}-h${
+          item.mediaMetadata.height
+        }`;
+      })
+    });
   }
 
   render() {
-    const photos = this.state.media;
-
-    if (photos.length) {
-      return (
-        <Slideshow
-          imageUrls={photos.map(photo => photo.baseUrl)}
-          slideDuration={10000}
-        />
-      );
+    if (this.state.media.length) {
+      return <Slideshow imageUrls={this.state.media} slideDuration={10000} />;
     }
 
     return (

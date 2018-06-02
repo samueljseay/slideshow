@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { Component } from "react";
 import Slideshow from "../slideshow";
+import config from "../config/config";
 
 class App extends Component {
   constructor(props) {
@@ -18,7 +19,7 @@ class App extends Component {
     gapi.client
       .init({
         scope,
-        clientId: ""
+        clientId: config.googlePhotosClientID
       })
       .then(() => {
         this.GoogleAuth = gapi.auth2.getAuthInstance();

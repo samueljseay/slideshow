@@ -59,6 +59,11 @@ class App extends Component {
 
   chooseAlbum(albumId) {
     this.fetchAlbumContents(albumId);
+
+    // poll every 10 minutes for new photos in album
+    setInterval(() => {
+      this.fetchAlbumContents(albumId);
+    }, 600000);
   }
 
   async fetchAlbumContents(albumId) {

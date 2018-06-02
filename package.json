@@ -1,0 +1,41 @@
+{
+  "name": "cryptowarrior",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "firebase deploy --only hosting,functions",
+    "start": "webpack --watch & http-server ./public",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sam Seay",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.49",
+    "@babel/plugin-proposal-async-generator-functions": "^7.0.0-beta.49",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.49",
+    "@babel/plugin-transform-regenerator": "^7.0.0-beta.49",
+    "@babel/polyfill": "^7.0.0-beta.49",
+    "@babel/preset-env": "^7.0.0-beta.49",
+    "@babel/preset-react": "^7.0.0-beta.49",
+    "babel-loader": "^8.0.0-beta.0",
+    "css-loader": "^0.28.7",
+    "file-loader": "^1.1.6",
+    "http-server": "^0.11.1",
+    "lost": "^8.2.0",
+    "postcss-loader": "^2.0.9",
+    "precss": "^2.0.0",
+    "style-loader": "^0.19.1",
+    "url-loader": "^0.6.2",
+    "webpack": "^3.10.0"
+  },
+  "dependencies": {
+    "@babel/plugin-transform-async-to-generator": "^7.0.0-beta.49",
+    "axios": "^0.17.1",
+    "eslint": "^4.19.1",
+    "firebase-functions": "^0.8.1",
+    "moment": "^2.20.1",
+    "react": "^16.4.0",
+    "react-dom": "^16.4.0"
+  }
+}

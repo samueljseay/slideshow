@@ -1,0 +1,5 @@
+node_modules
+js/config/config.json
+public/app.js
+*.log
+.runtimeconfig.json

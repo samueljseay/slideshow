@@ -1,0 +1,3 @@
+{
+  "plugins": ["@babel/plugin-proposal-async-generator-functions", "@babel/plugin-transform-regenerator","@babel/plugin-proposal-object-rest-spread"]
+}

@@ -1,8 +1,4 @@
 {
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
   "hosting": {
     "public": "public",
     "ignore": [
@@ -11,11 +7,8 @@
       "**/node_modules/**"
     ],
     "rewrites": [{
-      "source": "/solaredge",
-      "function": "solaredge"
-    }, {
-        "source": "**",
-        "destination": "/index.html"
+      "source": "**",
+      "destination": "/index.html"
     }]
   }
 }

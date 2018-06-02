@@ -54,7 +54,7 @@ export default class Slideshow extends Component {
 
     let constrainDimension = { height: offsetHeight - 100 };
 
-    if (width > offsetWidth) {
+    if (width / height > 2.5) {
       constrainDimension = { width: offsetWidth - 100 };
     }
 

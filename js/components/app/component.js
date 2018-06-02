@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { Component } from "react";
 import Slideshow from "../slideshow";
-import config from "../config/config";
+import config from "../../config/config";
 
 class App extends Component {
   constructor(props) {
@@ -81,7 +81,12 @@ class App extends Component {
     const photos = this.state.media;
 
     if (photos.length) {
-      return <Slideshow imageUrls={photos.map(photo => photo.baseUrl)} />;
+      return (
+        <Slideshow
+          imageUrls={photos.map(photo => photo.baseUrl)}
+          slideDuration={10000}
+        />
+      );
     }
 
     return (

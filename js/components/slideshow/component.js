@@ -30,7 +30,7 @@ export default class Slideshow extends Component {
   loadNextFrame() {
     setTimeout(() => {
       this.imageRef.current.className += " fade";
-    }, 9000);
+    }, this.props.slideDuration - 1000);
 
     setTimeout(() => {
       this.imageRef.current.className = this.imageRef.current.className.replace(
@@ -43,7 +43,7 @@ export default class Slideshow extends Component {
           : this.state.index + 1;
       this.setState({ index });
       this.loadNextFrame();
-    }, 10000);
+    }, this.props.slideDuration);
   }
 
   fadeOutTransition() {}

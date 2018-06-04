@@ -22,8 +22,7 @@ You'll need a google API client ID to use with Google Photos. Create `js/config/
 
 then:
 
-`npm i`
-`npm start`
+`npm i && npm start`
 
 You'll need to login to your google account, then the album choice UI is very basic, choose an album and it will load the photos into
 a slide show.

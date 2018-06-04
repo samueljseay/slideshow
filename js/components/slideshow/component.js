@@ -33,27 +33,34 @@ export default class Slideshow extends Component {
   finishLoading(index) {
     if (this.state.loading) {
       this.setState({ index, loading: false });
-      this.loadNextFrame();
+      this.delayFadeout();
+
+      setInterval(() => {
+        this.loadNextFrame();
+      }, this.props.slideDuration);
     }
   }
 
-  loadNextFrame() {
-    setTimeout(() => {
-      this.imageRef.current.className += " fade";
-    }, this.props.slideDuration - 1000);
+  nextSlide(slide) {
+    const index =
+      this.state.index === this.state.images.length - 1
+        ? 0
+        : this.state.index + 1;
+    this.setState({ index });
+    this.imageRef.current.className = "";
+  }
 
+  delayFadeout() {
     setTimeout(() => {
-      this.imageRef.current.className = this.imageRef.current.className.replace(
-        "fade",
-        ""
-      );
-      const index =
-        this.state.index === this.state.images.length - 1
-          ? 0
-          : this.state.index + 1;
-      this.setState({ index });
-      this.loadNextFrame();
-    }, this.props.slideDuration);
+      if (this.imageRef && this.imageRef.current) {
+        this.imageRef.current.className = "fade";
+      }
+    }, this.props.slideDuration - 1000);
+  }
+
+  loadNextFrame() {
+    this.delayFadeout();
+    this.nextSlide();
   }
 
   render() {
@@ -63,33 +70,34 @@ export default class Slideshow extends Component {
     const constrainDimension =
       width / height > 2.5
         ? { width: offsetWidth - 100 }
-        : { height: offsetHeight - 60 };
+        : { height: offsetHeight - 100 };
 
     if (loading) {
       return <p>Loading</p>;
     } else {
       return (
-        <div
-          style={{
-            backgroundColor: "#000",
-            padding: "30px 50px",
-            objectFit: "contain",
-            width: offsetWidth - 100,
-            height: offsetHeight - 60,
-            display: "flex"
-          }}
-        >
-          <img
-            src={src}
-            ref={this.imageRef}
+        <div style={{ height: "100%", width: "100%", backgroundColor: "#000" }}>
+          <div
             style={{
-              ...constrainDimension,
-              margin: "auto",
-              border: "10px solid white",
-              opacity: 1,
-              transition: "opacity 1s ease-in-out"
+              padding: 30,
+              objectFit: "contain",
+              width: offsetWidth - 100,
+              height: offsetHeight - 60,
+              display: "flex"
             }}
-          />
+          >
+            <img
+              src={src}
+              ref={this.imageRef}
+              style={{
+                ...constrainDimension,
+                margin: "auto",
+                border: "10px solid white",
+                opacity: 1,
+                transition: "opacity 1s ease-in-out"
+              }}
+            />
+          </div>
         </div>
       );
     }

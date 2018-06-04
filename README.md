@@ -1,5 +1,15 @@
 # Google Photos Slideshow
 
+## Why
+
+I originally thought I could run the Google photos slideshow from a browser on
+my wall mounted screen, but alas it crashes after a few minutes in Chrome or Firefox. It also
+has no option to change transition speed or transition effect. This rectifies those issues
+for me.
+
+Authentication is done client side via the Google authentication mechanism. You'll need a
+Google Photos client ID to set this up for yourself.
+
 ## Setup
 
 You'll need a google API client ID to use with Google Photos. Create `js/config/config.json` with contents:

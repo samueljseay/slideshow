@@ -19,12 +19,22 @@ export default class Slideshow extends Component {
   }
 
   componentDidMount() {
-    this.state.images[0].onload = this.finishLoading.bind(this);
+    // load the first image faster by attaching onload to all images
+    // the way this currently works means that there is a chance if
+    // slide duration was too fast that the slideshow might try to
+    // show an image before it is loaded.
+    this.state.images.forEach((image, index) => {
+      image.onload = () => {
+        this.finishLoading(index);
+      };
+    });
   }
 
-  finishLoading() {
-    this.setState({ loading: false });
-    this.loadNextFrame();
+  finishLoading(index) {
+    if (this.state.loading) {
+      this.setState({ index, loading: false });
+      this.loadNextFrame();
+    }
   }
 
   loadNextFrame() {
@@ -48,15 +58,12 @@ export default class Slideshow extends Component {
 
   render() {
     const { index, loading, images } = this.state;
-
     const { src, height, width } = images[index];
     const { offsetHeight, offsetWidth } = document.body;
-
-    let constrainDimension = { height: offsetHeight - 100 };
-
-    if (width / height > 2.5) {
-      constrainDimension = { width: offsetWidth - 100 };
-    }
+    const constrainDimension =
+      width / height > 2.5
+        ? { width: offsetWidth - 100 }
+        : { height: offsetHeight - 60 };
 
     if (loading) {
       return <p>Loading</p>;
@@ -64,11 +71,11 @@ export default class Slideshow extends Component {
       return (
         <div
           style={{
-            padding: 50,
+            backgroundColor: "#000",
+            padding: "30px 50px",
             objectFit: "contain",
             width: offsetWidth - 100,
-            height: offsetHeight - 100,
-            backgroundColor: "#000",
+            height: offsetHeight - 60,
             display: "flex"
           }}
         >

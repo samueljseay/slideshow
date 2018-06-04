@@ -2,6 +2,8 @@ import axios from "axios";
 import React, { Component } from "react";
 import Slideshow from "../slideshow";
 import config from "../../config/config";
+import isEqual from "lodash.isequal";
+import shuffle from "lodash.shuffle";
 
 class App extends Component {
   constructor(props) {
@@ -25,7 +27,7 @@ class App extends Component {
         this.GoogleAuth = gapi.auth2.getAuthInstance();
         const user = this.GoogleAuth.currentUser.get();
 
-        if (user.hasGrantedScopes(scope)) {
+        if (user && user.hasGrantedScopes(scope)) {
           this.fetchAlbums();
         } else {
           this.GoogleAuth.signIn();
@@ -79,18 +81,27 @@ class App extends Component {
       config
     );
 
-    this.setState({
-      media: data.mediaItems.map(item => {
-        return `${item.baseUrl}=w${item.mediaMetadata.width}-h${
-          item.mediaMetadata.height
-        }`;
-      })
+    const media = data.mediaItems.map(item => {
+      return `${item.baseUrl}=w${item.mediaMetadata.width}-h${
+        item.mediaMetadata.height
+      }`;
     });
+
+    if (!isEqual(this.state.media, media)) {
+      this.setState({
+        media
+      });
+    }
   }
 
   render() {
     if (this.state.media.length) {
-      return <Slideshow imageUrls={this.state.media} slideDuration={10000} />;
+      return (
+        <Slideshow
+          imageUrls={shuffle(this.state.media)}
+          slideDuration={10000}
+        />
+      );
     }
 
     return (

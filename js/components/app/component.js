@@ -3,7 +3,6 @@ import React, { Component } from "react";
 import Slideshow from "../slideshow";
 import config from "../../config/config";
 import isEqual from "lodash.isequal";
-import shuffle from "lodash.shuffle";
 
 class App extends Component {
   constructor(props) {
@@ -77,7 +76,7 @@ class App extends Component {
 
     const { data } = await axios.post(
       "https://photoslibrary.googleapis.com/v1/mediaItems:search",
-      { albumId },
+      { albumId, pageSize: 500 },
       config
     );
 
@@ -88,6 +87,7 @@ class App extends Component {
     });
 
     if (!isEqual(this.state.media, media)) {
+      console.log(`updated media items at ${new Date()}`);
       this.setState({
         media
       });
@@ -96,12 +96,7 @@ class App extends Component {
 
   render() {
     if (this.state.media.length) {
-      return (
-        <Slideshow
-          imageUrls={shuffle(this.state.media)}
-          slideDuration={10000}
-        />
-      );
+      return <Slideshow imageUrls={this.state.media} slideDuration={10000} />;
     }
 
     return (

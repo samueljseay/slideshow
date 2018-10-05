@@ -58,25 +58,22 @@ class App extends Component {
     }
   }
 
-  chooseAlbum(albumId) {
-    this.fetchAlbumContents(albumId);
-
-    // poll every 10 minutes for new photos in album
-    setInterval(() => {
-      this.fetchAlbumContents(albumId);
-    }, 600000);
-  }
-
-  async fetchAlbumContents(albumId) {
+  async getMediaItems(albumId, pageToken) {
     const authToken = gapi.client.getToken().access_token;
 
-    var config = {
+    const defaultConfig = {
+      albumId,
+      pageSize: 100,
       headers: { Authorization: `Bearer ${authToken}` }
     };
 
+    const config = pageToken
+      ? Object.assign({}, defaultConfig, { pageToken })
+      : defaultConfig;
+
     const { data } = await axios.post(
       "https://photoslibrary.googleapis.com/v1/mediaItems:search",
-      { albumId, pageSize: 500 },
+      { albumId, pageToken, pageSize: 100 },
       config
     );
 
@@ -85,6 +82,40 @@ class App extends Component {
         item.mediaMetadata.height
       }`;
     });
+
+    return {
+      nextPageToken: data.nextPageToken,
+      media
+    };
+  }
+
+  async chooseAlbum(albumId) {
+    await this.fetchAlbumContents(albumId);
+
+    // poll every 10 minutes for new photos in album
+    setInterval(async () => {
+      await this.fetchAlbumContents(albumId);
+    }, 600000);
+  }
+
+  async fetchAlbumContents(albumId) {
+    const pages = [];
+    pages.push(await this.getMediaItems(albumId));
+
+    let nextPage = true;
+    let i = 0;
+    while (nextPage) {
+      if (pages[i].nextPageToken) {
+        pages.push(await this.getMediaItems(albumId, pages[i].nextPageToken));
+        i++;
+      } else {
+        nextPage = false;
+      }
+    }
+
+    const media = pages.reduce((acc, mediaPage) => {
+      return acc.concat(mediaPage.media);
+    }, []);
 
     if (!isEqual(this.state.media, media)) {
       console.log(`updated media items at ${new Date()}`);
@@ -106,8 +137,8 @@ class App extends Component {
           {this.state.albums.map((album, i) => (
             <li key={i}>
               <a
-                onClick={() => {
-                  this.chooseAlbum(album.id);
+                onClick={async () => {
+                  await this.chooseAlbum(album.id);
                 }}
                 href="#"
               >

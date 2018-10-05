@@ -58,6 +58,7 @@ export default class Slideshow extends Component {
     }, this.props.slideDuration - 1000);
   }
 
+  // Note that there is still an issue where the first image displays multiple times. Not sure why
   loadNextFrame() {
     this.delayFadeout();
     this.nextSlide();

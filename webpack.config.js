@@ -24,7 +24,8 @@ module.exports = {
     ]
   },
   output: {
-    filename: "./public/app.js"
+    path: __dirname + "/public",
+    filename: "app.js"
   },
   plugins: [new UglifyJsPlugin()]
 };

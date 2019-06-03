@@ -2,12 +2,23 @@ import axios from "axios";
 import React, { Component } from "react";
 import Slideshow from "../slideshow";
 import config from "../../config/config";
+import List from "@material-ui/core/List";
+import ImageIcon from "@material-ui/icons/Image";
+import ListItem from "@material-ui/core/ListItem";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import isEqual from "lodash.isequal";
+import {
+  ListItemAvatar,
+  Avatar,
+  ListItemText,
+  ListItemIcon,
+  ListSubheader
+} from "@material-ui/core";
 
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = { albums: [], media: [] };
+    this.state = { albums: [], media: [], loading: true };
   }
   componentDidMount() {
     if (window.gapi) {
@@ -54,7 +65,7 @@ class App extends Component {
         config
       );
 
-      this.setState({ albums: data.albums });
+      this.setState({ albums: data.albums, loading: false });
     }
   }
 
@@ -125,28 +136,59 @@ class App extends Component {
     }
   }
 
+  renderAlbumList() {
+    const { albums } = this.state;
+    return albums.map(album => (
+      <ListItem
+        button
+        onClick={async () => {
+          this.setState({ loading: true });
+          await this.fetchAlbumContents(album.id);
+          this.setState({ loading: false });
+        }}
+      >
+        <ListItemIcon>
+          <ImageIcon />
+        </ListItemIcon>
+        <ListItemText
+          primary={album.title}
+          secondary={`${album.mediaItemsCount} photos`}
+        />
+      </ListItem>
+    ));
+  }
+
   render() {
     if (this.state.media.length) {
       return <Slideshow imageUrls={this.state.media} slideDuration={10000} />;
     }
 
+    if (this.state.loading) {
+      return (
+        <div
+          style={{
+            width: "100%",
+            height: "400px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <CircularProgress />
+        </div>
+      );
+    }
+
     return (
       <div>
-        <h3>Choose an Album</h3>
-        <ul>
-          {this.state.albums.map((album, i) => (
-            <li key={i}>
-              <a
-                onClick={async () => {
-                  await this.chooseAlbum(album.id);
-                }}
-                href="#"
-              >
-                {album.title}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <List
+          component="nav"
+          subheader={
+            <ListSubheader component="div">Choose an album</ListSubheader>
+          }
+        >
+          {this.renderAlbumList()}
+        </List>
       </div>
     );
   }

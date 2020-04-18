@@ -12,7 +12,7 @@ import {
   Avatar,
   ListItemText,
   ListItemIcon,
-  ListSubheader
+  ListSubheader,
 } from "@material-ui/core";
 
 class App extends Component {
@@ -31,7 +31,7 @@ class App extends Component {
     gapi.client
       .init({
         scope,
-        clientId: config.googlePhotosClientID
+        clientId: config.googlePhotosClientID,
       })
       .then(() => {
         this.GoogleAuth = gapi.auth2.getAuthInstance();
@@ -46,6 +46,10 @@ class App extends Component {
         this.GoogleAuth.isSignedIn.listen(() => {
           this.fetchAlbums();
         });
+      })
+      .catch((err) => {
+        console.log("Could not init auth client with error: ", err.error);
+        console.log("Error details: ", err.details);
       });
   }
 
@@ -57,7 +61,7 @@ class App extends Component {
       const authToken = gapi.client.getToken().access_token;
 
       var config = {
-        headers: { Authorization: `Bearer ${authToken}` }
+        headers: { Authorization: `Bearer ${authToken}` },
       };
 
       const { data } = await axios.get(
@@ -75,7 +79,7 @@ class App extends Component {
     const defaultConfig = {
       albumId,
       pageSize: 100,
-      headers: { Authorization: `Bearer ${authToken}` }
+      headers: { Authorization: `Bearer ${authToken}` },
     };
 
     const config = pageToken
@@ -88,15 +92,13 @@ class App extends Component {
       config
     );
 
-    const media = data.mediaItems.map(item => {
-      return `${item.baseUrl}=w${item.mediaMetadata.width}-h${
-        item.mediaMetadata.height
-      }`;
+    const media = data.mediaItems.map((item) => {
+      return `${item.baseUrl}=w${item.mediaMetadata.width}-h${item.mediaMetadata.height}`;
     });
 
     return {
       nextPageToken: data.nextPageToken,
-      media
+      media,
     };
   }
 
@@ -131,14 +133,14 @@ class App extends Component {
     if (!isEqual(this.state.media, media)) {
       console.log(`updated media items at ${new Date()}`);
       this.setState({
-        media
+        media,
       });
     }
   }
 
   renderAlbumList() {
     const { albums } = this.state;
-    return albums.map(album => (
+    return albums.map((album) => (
       <ListItem
         button
         onClick={async () => {
@@ -171,7 +173,7 @@ class App extends Component {
             height: "400px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
           }}
         >
           <CircularProgress />

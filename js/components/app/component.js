@@ -48,8 +48,8 @@ class App extends Component {
         });
       })
       .catch((err) => {
-        console.log("Could not init auth client with error: ", err.error);
-        console.log("Error details: ", err.details);
+        console.log("Could not init auth client with error: " + err.error);
+        console.log("Error details: " + err.details);
       });
   }
 

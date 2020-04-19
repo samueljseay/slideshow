@@ -27,5 +27,7 @@ then:
 You'll need to login to your google account, then the album choice UI is very basic, choose an album and it will load the photos into
 a slide show.
 
+## TODO
 
-
+1. Load images in a queue with fetch, only loading the first (n) images. When image n-1 is displayed, load the next (n) (or something like this)
+2. Cache images as base64 in localstorage with their IDs

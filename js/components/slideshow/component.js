@@ -1,106 +1,158 @@
-import React, { Component } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { loadImage } from "../../services/image";
 
-export default class Slideshow extends Component {
-  constructor(props) {
-    super(props);
-    const images = props.imageUrls.map(photo => {
-      const image = new Image();
-      image.src = photo;
-      return image;
-    });
-
-    this.imageRef = React.createRef();
-
-    this.state = {
-      loading: true,
-      images,
-      index: 0
-    };
+class ImageRequestQueue {
+  constructor() {
+    this.processedItems = [];
+    this.paused = false;
+    this.itemsToProcessInAdvance = 5;
+    this.itemsProcessed = 0;
+    this.finished = false;
+    this.onProcessItem = (image) => {};
   }
 
-  componentDidMount() {
-    // load the first image faster by attaching onload to all images
-    // the way this currently works means that there is a chance if
-    // slide duration was too fast that the slideshow might try to
-    // show an image before it is loaded.
-    this.state.images.forEach((image, index) => {
-      image.onload = () => {
-        this.finishLoading(index);
-      };
+  start(imageUrls, onProcessItem) {
+    this.imageUrls = imageUrls;
+    this.onProcessItem = onProcessItem;
+    this.paused = false;
+
+    window.requestIdleCallback(() => {
+      this.processQueue();
     });
   }
 
-  finishLoading(index) {
-    if (this.state.loading) {
-      this.setState({ index, loading: false });
-      this.delayFadeout();
+  attachCallback(onProcessItem) {
+    this.onProcessItem = onProcessItem;
+  }
 
-      setInterval(() => {
-        this.loadNextFrame();
-      }, this.props.slideDuration);
+  async fetchImage(imageUrl) {
+    const image = await loadImage(imageUrl);
+    this.processedItems.push(image);
+    this.itemsProcessed++;
+
+    this.onProcessItem(image);
+
+    if (this.itemsProcessed < this.itemsToProcessInAdvance) {
+      window.requestIdleCallback(() => {
+        this.processQueue();
+      });
+    } else {
+      this.paused = true;
+      this.itemsProcessed = 0;
     }
   }
 
-  nextSlide(slide) {
-    const index =
-      this.state.index === this.state.images.length - 1
-        ? 0
-        : this.state.index + 1;
-    this.setState({ index });
-    this.imageRef.current.className = "";
-  }
+  processQueue() {
+    const imageUrl = this.imageUrls[this.processedItems.length];
 
-  delayFadeout() {
-    setTimeout(() => {
-      if (this.imageRef && this.imageRef.current) {
-        this.imageRef.current.className = "fade";
-      }
-    }, this.props.slideDuration - 1000);
-  }
-
-  // Note that there is still an issue where the first image displays multiple times. Not sure why
-  loadNextFrame() {
-    this.delayFadeout();
-    this.nextSlide();
-  }
-
-  render() {
-    const { index, loading, images } = this.state;
-    const { src, height, width } = images[index];
-    const { offsetHeight, offsetWidth } = document.body;
-    const constrainDimension =
-      width / height > 2.5
-        ? { width: offsetWidth - 100 }
-        : { height: offsetHeight - 100 };
-
-    if (loading) {
-      return <p>Loading</p>;
+    if (imageUrl) {
+      this.fetchImage(imageUrl);
     } else {
-      return (
-        <div style={{ height: "100%", width: "100%", backgroundColor: "#000" }}>
-          <div
-            style={{
-              padding: 30,
-              objectFit: "contain",
-              width: offsetWidth - 100,
-              height: offsetHeight - 60,
-              display: "flex"
-            }}
-          >
-            <img
-              src={src}
-              ref={this.imageRef}
-              style={{
-                ...constrainDimension,
-                margin: "auto",
-                border: "10px solid white",
-                opacity: 1,
-                transition: "opacity 1s ease-in-out"
-              }}
-            />
-          </div>
-        </div>
-      );
+      this.finished = true;
     }
   }
 }
+
+const requestQueue = new ImageRequestQueue();
+
+export const Slideshow = ({ imageUrls }) => {
+  const [images, setImages] = useState([]);
+  const [displayedImage, setDisplayedImage] = useState({
+    image: null,
+    index: null,
+  });
+  const [fading, setFading] = useState(false);
+  const imageRef = useRef(null);
+
+  useEffect(() => {
+    if (images.length) {
+      const handler = setInterval(() => {
+        let index = displayedImage.index + 1;
+
+        // loop back to start
+        if (index > images.length - 1) {
+          index = 0;
+        }
+
+        const nextImage = images[index];
+
+        // TODO, maybe use state to determine class name instead?
+        if (nextImage) {
+          setFading(true);
+
+          setTimeout(() => {
+            setDisplayedImage({ image: nextImage, index });
+
+            setTimeout(() => {
+              setFading(false);
+            }, 1000);
+          }, 1000);
+        }
+      }, 10000);
+
+      return () => {
+        clearInterval(handler);
+      };
+    }
+  }, [images, displayedImage]);
+
+  const addImage = useCallback(
+    (image) => {
+      if (!images.length) {
+        // display first image
+        setDisplayedImage({ image, index: 0 });
+      }
+
+      setImages([...images, image]);
+    },
+    [images]
+  );
+
+  requestQueue.attachCallback(addImage);
+
+  useEffect(() => {
+    requestQueue.start(imageUrls, (image) => {
+      //addImage(image);
+    });
+  }, []);
+
+  const { offsetHeight, offsetWidth } = document.body;
+
+  const { height, width } = displayedImage.image
+    ? displayedImage.image
+    : { height: 0, width: 0 };
+  const constrainDimension =
+    height && width
+      ? width / height > 2.5
+        ? { width: offsetWidth - 100 }
+        : { height: offsetHeight - 100 }
+      : {};
+
+  return (
+    <div style={{ height: "100%", width: "100%", backgroundColor: "#000" }}>
+      <div
+        style={{
+          padding: 30,
+          objectFit: "contain",
+          width: offsetWidth - 100,
+          height: offsetHeight - 60,
+          display: "flex",
+        }}
+      >
+        {displayedImage.image && (
+          <img
+            className={fading ? "fade" : ""}
+            src={displayedImage.image.src}
+            style={{
+              ...constrainDimension,
+              margin: "auto",
+              border: "10px solid white",
+              opacity: 1,
+              transition: "opacity 1s ease-in-out",
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+};

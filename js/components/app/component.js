@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { Component } from "react";
-import Slideshow from "../slideshow";
+import { Slideshow } from "../slideshow";
 import config from "../../config/config";
 import List from "@material-ui/core/List";
 import ImageIcon from "@material-ui/icons/Image";
@@ -32,6 +32,7 @@ class App extends Component {
       .init({
         scope,
         clientId: config.googlePhotosClientID,
+        ux_mode: "redirect",
       })
       .then(() => {
         this.GoogleAuth = gapi.auth2.getAuthInstance();
@@ -106,9 +107,9 @@ class App extends Component {
     await this.fetchAlbumContents(albumId);
 
     // poll every 10 minutes for new photos in album
-    setInterval(async () => {
-      await this.fetchAlbumContents(albumId);
-    }, 600000);
+    // setInterval(async () => {
+    //   await this.fetchAlbumContents(albumId);
+    // }, 600000);
   }
 
   async fetchAlbumContents(albumId) {

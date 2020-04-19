@@ -1,1 +1,1 @@
-export { default } from "./component";
+export { Slideshow } from "./component";

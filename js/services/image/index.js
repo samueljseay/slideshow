@@ -1,5 +1,5 @@
-export const loadImage = async (imageUrl) => {
-  return new Promise((resolve, reject) => {
+export const loadImage = async (imageUrl) =>
+  new Promise((resolve) => {
     // Google's content service does not provide cors headers, so we're forced to load
     // images via Image tag
     const img = new Image();
@@ -8,4 +8,3 @@ export const loadImage = async (imageUrl) => {
       resolve(img);
     };
   });
-};

@@ -6,14 +6,7 @@ import List from "@material-ui/core/List";
 import ImageIcon from "@material-ui/icons/Image";
 import ListItem from "@material-ui/core/ListItem";
 import CircularProgress from "@material-ui/core/CircularProgress";
-import isEqual from "lodash.isequal";
-import {
-  ListItemAvatar,
-  Avatar,
-  ListItemText,
-  ListItemIcon,
-  ListSubheader,
-} from "@material-ui/core";
+import { ListItemText, ListItemIcon, ListSubheader } from "@material-ui/core";
 
 class App extends Component {
   constructor(props) {
@@ -105,11 +98,6 @@ class App extends Component {
 
   async chooseAlbum(albumId) {
     await this.fetchAlbumContents(albumId);
-
-    // poll every 10 minutes for new photos in album
-    // setInterval(async () => {
-    //   await this.fetchAlbumContents(albumId);
-    // }, 600000);
   }
 
   async fetchAlbumContents(albumId) {
@@ -131,18 +119,16 @@ class App extends Component {
       return acc.concat(mediaPage.media);
     }, []);
 
-    if (!isEqual(this.state.media, media)) {
-      console.log(`updated media items at ${new Date()}`);
-      this.setState({
-        media,
-      });
-    }
+    this.setState({
+      media,
+    });
   }
 
   renderAlbumList() {
     const { albums } = this.state;
-    return albums.map((album) => (
+    return albums.map((album, index) => (
       <ListItem
+        key={index}
         button
         onClick={async () => {
           this.setState({ loading: true });

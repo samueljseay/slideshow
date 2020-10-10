@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useInterval } from "../../lib/use-interval";
 import { loadImage } from "../../services/image";
 
 class ImageRequestQueue {
@@ -9,20 +10,21 @@ class ImageRequestQueue {
     this.itemsProcessed = 0;
     this.finished = false;
     this.onProcessItem = (image) => {};
+    this.hasStarted = false;
   }
 
-  start(imageUrls, onProcessItem) {
-    this.imageUrls = imageUrls;
-    this.onProcessItem = onProcessItem;
-    this.paused = false;
+  start(imageUrls, onProcessItem = () => {}) {
+    if (!this.hasStarted) {
+      this.imageUrls = imageUrls;
+      this.onProcessItem = onProcessItem;
+      this.paused = false;
 
-    window.requestIdleCallback(() => {
-      this.processQueue();
-    });
-  }
+      window.requestIdleCallback(() => {
+        this.processQueue();
+      });
+    }
 
-  attachCallback(onProcessItem) {
-    this.onProcessItem = onProcessItem;
+    this.hasStarted = true;
   }
 
   async fetchImage(imageUrl) {
@@ -30,9 +32,9 @@ class ImageRequestQueue {
     this.processedItems.push(image);
     this.itemsProcessed++;
 
-    this.onProcessItem(image);
+    this.onProcessItem(this.processedItems);
 
-    if (this.itemsProcessed < this.itemsToProcessInAdvance) {
+    if (this.itemsProcessed < this.imageUrls.length) {
       window.requestIdleCallback(() => {
         this.processQueue();
       });
@@ -51,76 +53,42 @@ class ImageRequestQueue {
       this.finished = true;
     }
   }
+
+  getImages() {
+    return this.processedItems;
+  }
 }
 
 const requestQueue = new ImageRequestQueue();
 
 export const Slideshow = ({ imageUrls }) => {
-  const [images, setImages] = useState([]);
-  const [displayedImage, setDisplayedImage] = useState({
-    image: null,
-    index: null,
-  });
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [loadedImages, setLoadedImages] = useState([]);
   const [fading, setFading] = useState(false);
-  const imageRef = useRef(null);
 
+  // TODO - support changing of imageUrls prop
   useEffect(() => {
-    if (images.length) {
-      const handler = setInterval(() => {
-        let index = displayedImage.index + 1;
-
-        // loop back to start
-        if (index > images.length - 1) {
-          index = 0;
-        }
-
-        const nextImage = images[index];
-
-        // TODO, maybe use state to determine class name instead?
-        if (nextImage) {
-          setFading(true);
-
-          setTimeout(() => {
-            setDisplayedImage({ image: nextImage, index });
-
-            setTimeout(() => {
-              setFading(false);
-            }, 1000);
-          }, 1000);
-        }
-      }, 10000);
-
-      return () => {
-        clearInterval(handler);
-      };
-    }
-  }, [images, displayedImage]);
-
-  const addImage = useCallback(
-    (image) => {
-      if (!images.length) {
-        // display first image
-        setDisplayedImage({ image, index: 0 });
-      }
-
-      setImages([...images, image]);
-    },
-    [images]
-  );
-
-  requestQueue.attachCallback(addImage);
-
-  useEffect(() => {
-    requestQueue.start(imageUrls, (image) => {
-      //addImage(image);
-    });
+    requestQueue.start(imageUrls, (images) => setLoadedImages(images));
   }, []);
 
-  const { offsetHeight, offsetWidth } = document.body;
+  useInterval(() => {
+    const images = requestQueue.getImages();
+    const nextSlideIndex = slideIndex === imageUrls.length ? 0 : slideIndex + 1;
 
-  const { height, width } = displayedImage.image
-    ? displayedImage.image
-    : { height: 0, width: 0 };
+    if (images[nextSlideIndex] && !fading) {
+      setFading(true);
+
+      setTimeout(() => {
+        // There is an image, move to it
+        setSlideIndex(nextSlideIndex);
+        setFading(false);
+      }, 1000);
+    }
+  }, 10000);
+
+  const image = requestQueue.getImages()[slideIndex];
+  const { offsetHeight, offsetWidth } = document.body;
+  const { height, width } = image || { height: 0, width: 0 };
   const constrainDimension =
     height && width
       ? width / height > 2.5
@@ -139,10 +107,10 @@ export const Slideshow = ({ imageUrls }) => {
           display: "flex",
         }}
       >
-        {displayedImage.image && (
+        {image && (
           <img
             className={fading ? "fade" : ""}
-            src={displayedImage.image.src}
+            src={image.src}
             style={{
               ...constrainDimension,
               margin: "auto",

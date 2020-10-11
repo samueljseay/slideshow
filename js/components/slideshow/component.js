@@ -2,91 +2,83 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useInterval } from "../../lib/use-interval";
 import { loadImage } from "../../services/image";
 
-class ImageRequestQueue {
-  constructor() {
-    this.processedItems = [];
-    this.paused = false;
-    this.itemsToProcessInAdvance = 5;
-    this.itemsProcessed = 0;
-    this.finished = false;
-    this.onProcessItem = (image) => {};
-    this.hasStarted = false;
-  }
+// To use minimal memory the simplest thing is to prefetch 1 image in advance and use
+class ImageLoader {
+  constructor(imageUrls) {
+    this.images = imageUrls.map((url) => ({
+      img: null,
+      url,
+    }));
 
-  start(imageUrls, onProcessItem = () => {}) {
-    if (!this.hasStarted) {
-      this.imageUrls = imageUrls;
-      this.onProcessItem = onProcessItem;
-      this.paused = false;
-
-      window.requestIdleCallback(() => {
-        this.processQueue();
-      });
-    }
-
-    this.hasStarted = true;
+    // prefetch the first image, we know the image list is accessed in order
+    this.images[0].img = loadImage(this.images[0].url);
   }
 
   async fetchImage(imageUrl) {
     const image = await loadImage(imageUrl);
-    this.processedItems.push(image);
-    this.itemsProcessed++;
-
-    this.onProcessItem(this.processedItems);
-
-    if (this.itemsProcessed < this.imageUrls.length) {
-      window.requestIdleCallback(() => {
-        this.processQueue();
-      });
-    } else {
-      this.paused = true;
-      this.itemsProcessed = 0;
-    }
   }
 
-  processQueue() {
-    const imageUrl = this.imageUrls[this.processedItems.length];
+  // Returns a promise with the image
+  getImage(index) {
+    const image = this.images[index];
+    const lastImage = this.images[index - 1];
+    const nextImage =
+      index === this.images.length - 1
+        ? this.images[0]
+        : this.images[index + 1];
 
-    if (imageUrl) {
-      this.fetchImage(imageUrl);
-    } else {
-      this.finished = true;
+    // Null out the last image to save memory
+    if (lastImage && lastImage.img !== null) {
+      lastImage.img = null;
     }
-  }
 
-  getImages() {
-    return this.processedItems;
+    // Prefetch the next image
+    if (nextImage.img === null) {
+      nextImage.img = loadImage(nextImage.url);
+    }
+
+    if (image.img === null) {
+      image.img = loadImage(image.url);
+    }
+
+    return image.img;
   }
 }
 
-const requestQueue = new ImageRequestQueue();
-
 export const Slideshow = ({ imageUrls }) => {
   const [slideIndex, setSlideIndex] = useState(0);
-  const [loadedImages, setLoadedImages] = useState([]);
   const [fading, setFading] = useState(false);
+  const [displayedImage, setDisplayedImage] = useState(null);
+  const [firstImageLoaded, setFirstImageLoaded] = useState(false);
 
-  // TODO - support changing of imageUrls prop
-  useEffect(() => {
-    requestQueue.start(imageUrls, (images) => setLoadedImages(images));
-  }, []);
+  let loader = new ImageLoader(imageUrls);
 
   useInterval(() => {
-    const images = requestQueue.getImages();
-    const nextSlideIndex = slideIndex === imageUrls.length ? 0 : slideIndex + 1;
+    if (firstImageLoaded) {
+      loader.getImage(slideIndex).then((img) => {
+        setFading(true);
 
-    if (images[nextSlideIndex] && !fading) {
-      setFading(true);
-
-      setTimeout(() => {
-        // There is an image, move to it
-        setSlideIndex(nextSlideIndex);
-        setFading(false);
-      }, 1000);
+        setTimeout(() => {
+          const nextSlideIndex =
+            slideIndex === imageUrls.length - 1 ? 0 : slideIndex + 1;
+          setSlideIndex(nextSlideIndex);
+          setDisplayedImage(img);
+          setFading(false);
+        }, 1000);
+      });
     }
   }, 10000);
 
-  const image = requestQueue.getImages()[slideIndex];
+  useEffect(() => {
+    loader.getImage(0).then((img) => {
+      setDisplayedImage(img);
+      setSlideIndex(1);
+      setFirstImageLoaded(true);
+    });
+  }, []);
+
+  const image = displayedImage;
+
   const { offsetHeight, offsetWidth } = document.body;
   const { height, width } = image || { height: 0, width: 0 };
   const constrainDimension =

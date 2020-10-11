@@ -1,21 +1,26 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useInterval } from "../../lib/use-interval";
-import { loadImage } from "../../services/image";
+import { loadImage, releaseImage } from "../../services/image";
 
 // To use minimal memory the simplest thing is to prefetch 1 image in advance and use
 class ImageLoader {
-  constructor(imageUrls) {
+  constructor() {
+    this.images = [];
+    console.log("instantiate loader");
+  }
+
+  setImages(imageUrls) {
     this.images = imageUrls.map((url) => ({
-      img: null,
+      imageFromPool: null,
       url,
     }));
 
-    // prefetch the first image, we know the image list is accessed in order
-    this.images[0].img = loadImage(this.images[0].url);
+    this.start();
   }
 
-  async fetchImage(imageUrl) {
-    const image = await loadImage(imageUrl);
+  start() {
+    // prefetch the first image, we know the image list is accessed in order
+    this.images[0].imageFromPool = loadImage(this.images[0].url);
   }
 
   // Returns a promise with the image
@@ -27,23 +32,24 @@ class ImageLoader {
         ? this.images[0]
         : this.images[index + 1];
 
-    // Null out the last image to save memory
-    if (lastImage && lastImage.img !== null) {
-      lastImage.img = null;
+    if (lastImage && lastImage.imageFromPool) {
+      releaseImage(lastImage.imageFromPool);
+    }
+
+    if (image.imageFromPool === null) {
+      image.imageFromPool = loadImage(image.url);
     }
 
     // Prefetch the next image
-    if (nextImage.img === null) {
-      nextImage.img = loadImage(nextImage.url);
+    if (nextImage.imageFromPool === null) {
+      nextImage.imageFromPool = loadImage(nextImage.url);
     }
 
-    if (image.img === null) {
-      image.img = loadImage(image.url);
-    }
-
-    return image.img;
+    return image.imageFromPool;
   }
 }
+
+let loader = new ImageLoader();
 
 export const Slideshow = ({ imageUrls }) => {
   const [slideIndex, setSlideIndex] = useState(0);
@@ -51,11 +57,9 @@ export const Slideshow = ({ imageUrls }) => {
   const [displayedImage, setDisplayedImage] = useState(null);
   const [firstImageLoaded, setFirstImageLoaded] = useState(false);
 
-  let loader = new ImageLoader(imageUrls);
-
   useInterval(() => {
     if (firstImageLoaded) {
-      loader.getImage(slideIndex).then((img) => {
+      loader.getImage(slideIndex).then(({ img }) => {
         setFading(true);
 
         setTimeout(() => {
@@ -70,7 +74,8 @@ export const Slideshow = ({ imageUrls }) => {
   }, 10000);
 
   useEffect(() => {
-    loader.getImage(0).then((img) => {
+    loader.setImages(imageUrls);
+    loader.getImage(0).then(({ img }) => {
       setDisplayedImage(img);
       setSlideIndex(1);
       setFirstImageLoaded(true);
